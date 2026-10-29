@@ -1,0 +1,24 @@
+{
+  "_nota": "Umbrales del árbol de decisión. TODOS PROVISIONALES hasta ejecutar src/medir_dataset.py con tus piezas. Cada valor final debe poder justificarse con la gráfica correspondiente de resultados/figuras.",
+
+  "validez": {
+    "solidez_min": 0.87,
+    "_nota": "Por debajo, la silueta no es una pieza rectangular aislada: mancha del fondo o piezas juntas -> 'irregular'. Medido en las capturas del 29/10: placa 4x4 0,962-0,972 (n=5), manchas del fieltro 0,347-0,779 (n=26). Umbral = punto medio entre ambos extremos. Rehacer con validez_solidez.png del dataset."
+  },
+
+  "tipos": {
+    "_nota": "Tipo geométrico = rejilla N x M (lado corto x lado largo, en studs). Solo se aceptan los tipos de esta lista; el resto sale como 'desconocido'.",
+    "aceptados": ["1x1", "1x2", "1x4", "2x2", "2x4"],
+    "tolerancia_studs": 0.35,
+    "_nota_tolerancia": "Si largo_mm/8 se aleja más de esto de un entero, la medida no es fiable y la pieza se marca 'dudosa'."
+  },
+
+  "color": {
+    "saturacion_min_cromatico": 70,
+    "_nota_sat": "Por debajo de esta saturación (0-255) la pieza es acromática: blanco, gris o negro.",
+    "valor_max_negro": 60,
+    "valor_min_blanco": 170,
+    "cortes_tono": [[7, "rojo"], [18, "naranja"], [35, "amarillo"], [86, "verde"], [131, "azul"], [170, "morado"], [180, "rojo"]],
+    "_nota_tono": "Tono H de OpenCV (0-180), recorrido en orden: el primer corte con H < límite da el color. Sin huecos entre tramos (H es decimal). El rojo aparece al principio y al final porque da la vuelta por 0."
+  }
+}

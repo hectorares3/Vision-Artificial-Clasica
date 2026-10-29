@@ -1,0 +1,20 @@
+{
+  "frame_width": 1920.0,
+  "frame_height": 1080.0,
+  "fps": -1.0,
+  "auto_exposure": -1.0,
+  "exposure": -6.0,
+  "gain": 255.0,
+  "auto_wb": 0.0,
+  "wb_temperature": 4500.0,
+  "autofocus": 2.0,
+  "focus": 0.0,
+  "brightness": 128.0,
+  "contrast": 128.0,
+  "saturation": 128.0,
+  "sharpness": 128.0,
+  "modo": "manual",
+  "luz_media": 27.8,
+  "pct_quemado": 0.0,
+  "fecha": "2026-10-29T13:54:33.167955"
+}

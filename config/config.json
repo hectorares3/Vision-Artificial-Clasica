@@ -1,0 +1,56 @@
+{
+  "_nota": "Parámetros del sistema. Los marcados PENDIENTE se rellenan con los scripts de calibración; no se ajustan a ojo.",
+  "camara": {
+    "indice": 0,
+    "ancho": 1920,
+    "alto": 1080,
+    "exposicion": -6,
+    "wb_temperatura": 4500,
+    "enfoque": 0,
+    "ganancia": 255,
+    "_nota": "Exposición en escala DirectShow log2(s): -6 ~ 1/64 s. Enfoque 0 = infinito; ajustar con la tecla c del driver y copiar aquí el valor. ganancia: 255 es lo que el driver ponía solo (máximo ruido); añade luz y bájala con las teclas a/d de captura.py hasta que el tapete vacío dé luz ~80-120."
+  },
+  "escala": {
+    "px_por_mm": 3.4414,
+    "_nota": "La calcula src/calibrar_escala.py. Con homografía es exacta en todo el tapete; sin ella solo vale cerca de donde se midió."
+  },
+  "homografia": {
+    "usar": false,
+    "matriz": null,
+    "ancho": null,
+    "alto": null,
+    "_nota": "Vista cenital métrica. La calcula src/calibrar_escala.py con las 4 esquinas de una hoja de tamaño conocido. Corrige la cámara inclinada (medido: 3,15 px/mm arriba y ~3,99 abajo con un único valor de 3,44). La ROI se expresa en la imagen ya rectificada."
+  },
+  "roi": {
+    "x": 189,
+    "y": 164,
+    "ancho": 1629,
+    "alto": 868,
+    "_nota": "Zona útil del tapete en píxeles. null = imagen completa. Lo fija src/calibrar_escala.py (opción ROI)."
+  },
+  "segmentacion": {
+    "fondo_imagen": "datos/calibracion/fondo.png",
+    "k_sigma": 6.0,
+    "apertura_px": 5,
+    "cierre_px": 9,
+    "area_min_mm2": 40,
+    "fondo_carpeta": "datos/calibracion/fondo",
+    "fondo_fotogramas": 15,
+    "compensar_iluminacion": true,
+    "_nota": "Un píxel es pieza si su distancia de color (Lab) al modelo del fieltro supera k_sigma sigmas locales. El modelo sale de fondo_fotogramas fotos del tapete vacío (carpeta fondo_carpeta; si no existe, fondo_imagen). compensar_iluminacion resta la deriva lenta de luz entre el fondo y la escena. area_min_mm2: una pieza 1x1 mide ~62 mm2, por debajo es ruido."
+  },
+  "lego": {
+    "paso_stud_mm": 8.0,
+    "holgura_mm": 0.2,
+    "correccion_borde_mm": 0.0,
+    "_nota": "Medidas oficiales LEGO: paso entre studs 8 mm, cada lado pierde 0,1 mm de holgura. Un 2x4 mide 15,8 x 31,8 mm. correccion_borde_mm: cuánto mide de más la silueta segmentada (desenfoque del borde + perspectiva de la cara superior). PENDIENTE: lo calcula medir_dataset.py comparando con las medidas nominales."
+  },
+  "referencia_blanca": {
+    "usar": false,
+    "x": null,
+    "y": null,
+    "ancho": null,
+    "alto": null,
+    "_nota": "Parche de cartulina blanca fijo en el tapete (coordenadas dentro de la ROI). Si usar=true, se normaliza el color de cada imagen con él."
+  }
+}
