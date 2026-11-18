@@ -15,3 +15,6 @@ dist/
 # Python
 __pycache__/
 *.pyc
+
+# Vídeo demo (se sube a YouTube, no al repo)
+*.mp4

@@ -22,7 +22,7 @@ RECT_MIN = 0.65                         # área contorno / área rectángulo (pi
 ANCHO_MIN_MM = 5                        # pieza más estrecha 6.9 mm; tiras de cartón del borde 2-4 mm
 
 # Nodo de tamaño: (límite superior en mm, nº de tetones). Cada umbral está a mitad de camino
-# entre los grupos medidos en las fotos: 1 tetón 6.9-12.3 | 2: 15.0-17.7 | 4: 29.5-32.4
+# entre los grupos medidos en las fotos: 1 tetón 6.9-12.3 | 2: 15.0-22.0 | 4: 29.5-32.3
 # | 6: 46.0-50.1 | 8: 60.4-63.2 mm
 LIMITES_MM = [(13.5, 1), (23.5, 2), (39.0, 4), (55.0, 6), (70.0, 8)]
 

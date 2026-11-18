@@ -8,6 +8,8 @@ clasificadores entrenados, que analiza una foto cenital de piezas LEGO sobre un 
    mediante un árbol de decisión. Clase final = tipo + color, por ejemplo `2x4 marron`.
 3. **Interpretación:** genera el inventario automático por tipo y color.
 
+**Vídeo demo:** https://youtu.be/joAlEJc477Q · **Trabajo escrito:** [Trabajo_Reto07_LEGO.pdf](Trabajo_Reto07_LEGO.pdf)
+
 ![Ejemplo de resultado](ejemplo_resultado.jpg)
 
 ## Pipeline
