@@ -1,0 +1,17 @@
+# Ejecutable (se regenera con PyInstaller, pesa ~77 MB)
+*.exe
+build/
+dist/
+*.spec
+
+# Salidas del programa
+*_resultado.jpg
+!ejemplo_resultado.jpg
+
+# Originales del iPhone (se suben las versiones JPG)
+*.HEIC
+*.heic
+
+# Python
+__pycache__/
+*.pyc

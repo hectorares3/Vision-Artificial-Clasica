@@ -1,71 +1,99 @@
-# Parcial de Visión Artificial Clásica: Reto LEGO
+# Visión Artificial Clásica: inventario de piezas LEGO
 
-Sistema de visión clásica que detecta piezas LEGO sobre un tapete verde, las clasifica por **tipo geométrico + color** con un árbol de decisión explícito y genera el **inventario** de la escena.
+Reto 07 (examen parcial). Sistema de visión artificial **clásica**, sin deep learning ni
+clasificadores entrenados, que analiza una foto cenital de piezas LEGO sobre un tapete verde:
+
+1. **Detección:** localiza todas las piezas.
+2. **Identificación:** asigna a cada pieza su **tipo** (tamaño en tetones) y su **color**
+   mediante un árbol de decisión. Clase final = tipo + color, por ejemplo `2x4 marron`.
+3. **Interpretación:** genera el inventario automático por tipo y color.
+
+![Ejemplo de resultado](ejemplo_resultado.jpg)
+
+## Pipeline
 
 ```
-Imagen RGB → rectificación + preprocesado → segmentación → características → árbol de decisión → clase → inventario
+Foto RGB -> suavizado -> HSV / Lab -> máscara del tapete verde -> piezas = (zona tapete) AND (no verde)
+-> apertura/cierre morfológico -> contornos -> filtros (borde, área, ancho, rectangularidad)
+-> características (rectángulo orientado en mm, mediana Lab/V sin reflejos)
+-> árbol de decisión (tamaño + color) -> inventario
 ```
 
-## Estructura
+## Árbol de decisión
 
-```
-parcial-lego/
-├── 0_instalar.bat … 7_evaluar.bat   ← doble clic, en orden
-├── config/
-│   ├── config.json      cámara, escala, ROI, segmentación (se rellena al calibrar)
-│   └── umbrales.json    umbrales del árbol de decisión (provisionales hasta medir)
-├── src/
-│   ├── comun.py             rutas, configuración, apertura de cámara en manual
-│   ├── captura.py           vista previa en vivo y captura de fotos
-│   ├── calibrar_escala.py   homografía (vista cenital), px/mm y zona útil a partir de la hoja A4
-│   ├── segmentacion.py      Nivel 1: sustracción de fondo en Lab
-│   ├── caracteristicas.py   área, perímetro, circularidad, solidez, rejilla en studs, color…
-│   ├── arbol.py             Nivel 2: árbol de decisión (validez + tipo + color)
-│   ├── detectar.py          pipeline completo + Nivel 3: inventario tipo × color
-│   ├── medir_dataset.py     mide el dataset y genera las gráficas de umbrales
-│   └── evaluar.py           matrices de confusión y aciertos por escena
-├── datos/
-│   ├── calibracion/   fondo/ (fotos del tapete vacío), fondo.png (la primera) y regla.png
-│   ├── dataset/       una subcarpeta por clase: 2x4_rojo/, 1x2_azul/…
-│   └── pruebas/       escenas mezcladas + su inventario real (.real.json)
-├── resultados/        CSV, imágenes anotadas, evaluación
-│   └── figuras/       gráficas para la memoria
-└── memoria/           guion del trabajo escrito y figuras propias
-```
+**Tamaño:** ancho y largo del rectángulo de área mínima, en mm (escala fija de 8 px/mm),
+convertidos a número de tetones. Cada umbral está a mitad de camino entre los grupos medidos:
 
-## Flujo de trabajo
-
-| Paso | Script | Qué haces |
+| Tetones | Medido (mm) | Umbral superior |
 |---|---|---|
-| 0 | `0_instalar.bat` | Solo la primera vez. Necesita Python 3.10+ instalado desde python.org. |
-| 1 | `1_capturar_calibracion.bat` | Ajusta luz, exposición (`+`/`-`) y ganancia (`a`/`d`): con el tapete vacío, `luz` en torno a 80–120 y sin magenta (quemado). Primero más luz y luego menos ganancia. Guarda con `k`. Tapete **vacío** → `f` (toma varias fotos seguidas). Con una **hoja A4** plana y sin esquinas dobladas → `r`. |
-| 2 | `2_calibrar_escala.bat` | Clic en las 4 esquinas de la hoja, Enter (A4) y arrastra la zona útil **solo sobre el tapete**. Corrige la inclinación de la cámara (homografía) y da px/mm y px por stud: es la **justificación de la resolución**. |
-| 3 | `3_capturar_dataset.bat` | Una ejecución por clase (`2x4_rojo`…). Unas 10 fotos por clase con 3–5 piezas iguales, en posiciones y giros distintos y **también en las esquinas**. Antes de cada foto pulsa el **número de piezas** (`1`–`9`): sirve para medir la detección. |
-| 4 | `4_medir_dataset.bat` | CSV + gráficas. Propone `correccion_borde_mm`. Con las gráficas se ajusta `umbrales.json`. |
-| 5 | `5_detectar_en_vivo.bat` | Sistema completo en vivo, con la máscara de segmentación al lado. Con el tapete vacío, `b` recaptura el fondo: hazlo al empezar cualquier sesión, sobre todo en el examen. |
-| 6 | `6_capturar_escenas_prueba.bat` | Escenas mezcladas. Para cada `X.png`, crea a mano `X.real.json`, por ejemplo `{"2x4_rojo": 2, "1x2_azul": 1}`. |
-| 7 | `7_evaluar.bat` | Aciertos y errores, para la memoria. |
+| 1 | 6,9 – 12,3 | 13,5 |
+| 2 | 15,0 – 17,7 | 23,5 |
+| 4 | 29,5 – 32,4 | 39,0 |
+| 6 | 46,0 – 50,1 | 55,0 |
+| 8 | 60,4 – 63,2 | 70,0 |
 
-**Si cambias la luz, la resolución, la altura de la cámara o la ROI**, repite los pasos 1 y 2 (nuevo fondo y nueva escala).
+**Color:** Lab de OpenCV (a\*, b\* centrados en 128) y brillo V de HSV:
 
-## Cómo decide
+```
+b* < 110 ............................ azul      (azul 72-105 | resto >= 122)
+a* > 160 ............................ rojo      (rojo 172-187 | marrón <= 153)
+a* > 132 -> V > 220 ................. rosa      (rosa V 249)
+         -> si no ................... marron    (marrón V <= 200)
+b* > 178 ............................ amarillo  (amarillo 196-198 | beige <= 160)
+b* > 145 ............................ beige     (beige 156-160 | blanco <= 135)
+V  < 190 ............................ negro     (negro 13-173 | blanco/gris >= 208)
+b* >= 130 o V > 245 ................. blanco    (blanco 132-135 | gris <= 128)
+si no ............................... gris
+```
 
-**Rectificación.** Con las 4 esquinas de la hoja A4 se calcula una homografía que convierte la imagen en una vista cenital con la misma escala en todo el tapete. Sin ella, la cámara inclinada daba 3,15 px/mm arriba y ~3,99 abajo, y un 2x4 cambiaba de tamaño según dónde estuviera.
+## Resultados
 
-**Segmentación.** Con varias fotos del tapete vacío se modela, en cada píxel, el color esperado del fieltro y su ruido (σ local: el ruido crece con el brillo). Antes de umbralizar se resta la deriva lenta de luz entre el fondo y la escena. Un píxel es pieza si su distancia en Lab al modelo supera `k_sigma` σ locales. `hist_fondo.png` muestra cuántos píxeles de fondo superarían ese umbral.
+`python evaluar.py` compara el inventario detectado con el real, anotado a mano:
 
-**Validez.** Antes de clasificar, el árbol descarta lo que no es una pieza aislada y completa: siluetas que tocan el borde de la zona útil (`borde`) y siluetas poco convexas (`solidez < solidez_min` → `irregular`: manchas del fondo o piezas juntas en L). Se cuentan aparte en el inventario. `validez_solidez.png` justifica el umbral.
+**13 fotos, 7 escenas distintas, 135 piezas: 135/135 aciertos (100 %), 0 falsos positivos.**
 
-**Tipo.** LEGO se fabrica con un paso de 8 mm. El lado del rectángulo mínimo, dividido entre 8 mm, da la rejilla N×M, que es invariante a la rotación. Antes se resta el sesgo de borde medido (`correccion_borde_mm`). Si la rejilla no está cerca de un entero, la pieza sale como `dudoso` en vez de inventarse una clase.
+(`IMG_4178` se excluye a propósito: está tomada más cerca, con otra escala.)
 
-**Color.** Se usa la mediana de S y V y la media circular de H sobre la pieza erosionada y sin brillos especulares. Si S es baja, la pieza es acromática (negro, gris o blanco según V). Si no, el tono H decide el color con cortes contiguos (`H < 7` → rojo, `H < 18` → naranja…), sin huecos entre tramos; el rojo aparece al principio y al final porque da la vuelta por 0.
+## Uso
 
-**Inventario (Nivel 3).** Tabla tipo × color con totales por fila y columna, más las detecciones sin clasificar por motivo. Se ve en la imagen anotada y en la consola, y se guarda en `<escena>_inventario.json`.
+```bash
+pip install -r requirements.txt
+python lego.py                    # abre un diálogo para elegir la foto
+python lego.py fotos/IMG_4176.jpg # o se le pasa la ruta
+python evaluar.py                 # medida cuantitativa de aciertos
+```
 
-## Limitaciones conocidas (para tratarlas en la memoria)
+Admite JPG, PNG y HEIC (iPhone). Saca la tabla de características de cada pieza y el
+inventario, y guarda `<foto>_resultado.jpg` con las piezas etiquetadas.
 
-- Desde arriba **un brick y un plate del mismo N×M son indistinguibles** (solo cambia la altura). Elige tipos con siluetas distintas.
-- Dos piezas **tocándose** se segmentan como una sola. Si forman una L, salen `irregular`. Pero **si quedan alineadas forman un rectángulo válido**: dos 1x2 lado con lado parecen un 2x2 y dos 2x2 parecen un 2x4, sin aviso. Habría que detectar la junta entre ellas (watershed o bordes internos).
-- La homografía corrige el plano del tapete, no la **pared lateral** de las piezas altas, que se ve más cuanto más lejos del centro estén. Solo se reduce subiendo la cámara. Compruébalo con el mismo 2x4 en el centro y en las esquinas.
-- **Piezas verdes** sobre fieltro verde: la segmentación se apoya en la diferencia de saturación y brillo. Hay que comprobarlo con datos antes de incluirlas.
-- `num_studs` se calcula pero el árbol aún no lo usa. Es experimental y puede servir de verificación de la rejilla.
+### Ejecutable para Windows (opcional)
+
+```bash
+pip install pyinstaller
+pyinstaller --onefile --console --name LEGO --collect-all pillow_heif lego.py
+```
+
+## Montaje y condiciones
+
+- Tapete de fieltro verde mate; cámara del móvil (iPhone, 4032×3024) en cenital y **siempre a la
+  misma altura**, porque la escala de 8 px/mm es fija. La pieza más pequeña (1x1, unos 8 mm)
+  ocupa unos 60 px.
+- Lámpara como iluminación principal.
+
+## Limitaciones
+
+- Si cambia la altura de la cámara, cambia la escala y los tamaños salen mal.
+- Las piezas no deben tocarse entre sí: se detectarían como una sola.
+- Las piezas verdes no se distinguen del tapete.
+- El negro es sensible a la iluminación (V entre 13 y 173), y marrón frente a beige tiene poco
+  margen en a\* (133 frente a 131).
+- Los tamaños no medidos (por ejemplo 2x3) se asignan al tamaño de catálogo más cercano.
+
+## Archivos
+
+| Archivo | Contenido |
+|---|---|
+| `lego.py` | Programa principal (segmentación, características, árbol, inventario) |
+| `evaluar.py` | Evaluación cuantitativa con las escenas anotadas |
+| `fotos/` | Fotos de prueba |
+| `ejemplo_resultado.jpg` | Ejemplo de salida |
